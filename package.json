@@ -67,5 +67,21 @@
     "@vue/composition-api": {
       "optional": true
     }
-  }
+  },
+  "description": "This plugin allow you to add [feature toggle](https://en.wikipedia.org/wiki/Feature_toggle) for a Vue application.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mrDlef/vue-use-features.git"
+  },
+  "keywords": [
+    "Feature",
+    "flipping",
+    "Vue"
+  ],
+  "author": "Denis Favreau",
+  "license": "GPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/mrDlef/vue-use-features/issues"
+  },
+  "homepage": "https://github.com/mrDlef/vue-use-features#readme"
 }
