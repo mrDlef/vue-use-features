@@ -25,3 +25,5 @@ jobs:
         run: pnpm install
       - name: Run tests
         run: pnpm run test:ci
+      - name: Run build
+        run: pnpm run build
