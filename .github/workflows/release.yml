@@ -17,12 +17,12 @@ jobs:
       # npm token anywhere — npmjs.com trusts this repo + workflow filename.
       id-token: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
       # Node 24, not 22: trusted publishing needs npm >= 11.5.1 and Node 22
       # still bundles npm 10.9.x. The check below fails loudly if that ever
       # regresses, since otherwise it only surfaces at publish time.
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24.x
           cache: pnpm
