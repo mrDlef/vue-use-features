@@ -3,7 +3,7 @@
   // Kept separate from tsconfig.app.json, which is `noEmit` + `composite`
   // and also covers the playground and the tests.
   "extends": "@vue/tsconfig/tsconfig.dom.json",
-  "include": ["src/useFeatures.ts"],
+  "include": ["src/index.ts", "src/useFeatures.ts", "src/persistence.ts", "src/queryString.ts"],
   "compilerOptions": {
     "noEmit": false,
     "declaration": true,

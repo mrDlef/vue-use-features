@@ -33,10 +33,10 @@
   ],
   "main": "dist/vue-use-features.umd.cjs",
   "module": "dist/vue-use-features.js",
-  "types": "dist/useFeatures.d.ts",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/useFeatures.d.ts",
+      "types": "./dist/index.d.ts",
       "import": "./dist/vue-use-features.js",
       "require": "./dist/vue-use-features.umd.cjs"
     },

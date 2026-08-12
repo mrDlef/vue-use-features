@@ -195,6 +195,60 @@ Flags set through that registry stay scoped to the request. Calling
 `useFeatures()` without a provider on the server would let one request's flags
 be observed by another.
 
+## Persistence and overrides
+
+Two helpers take a registry and layer state onto it. Both are plain functions
+rather than options on `createFeatures`, so they tree-shake away when unused and
+never run on a server unless you call them.
+
+```ts
+import useFeatures, { persistFeatures, applyQueryFlags } from '@mr-dlef/vue-use-features'
+
+const features = useFeatures()
+
+features.setFlags({ 'new-navbar': true, 'beta-settings': false })  // defaults
+persistFeatures(features)                                          // then stored state
+applyQueryFlags(features)                                          // then the URL
+```
+
+**Order matters**, and it is the order above: each layer can override the one
+before it. Query-string overrides last means a test URL wins over whatever the
+browser had stored.
+
+### `persistFeatures(features, options?)`
+
+Restores the registry from storage, then writes it back on every change. Returns
+a function that stops persisting.
+
+- `key` — storage key, defaults to `vue-use-features`
+- `storage` — defaults to `localStorage`; pass `sessionStorage`, or anything
+  exposing `getItem`/`setItem`
+
+It is a **no-op when no storage exists**, so calling it under SSR is safe. The
+stored key is user-writable, so a corrupt or hand-edited payload is ignored
+rather than trusted, and only boolean entries are kept. Storage failures — a full
+quota, a private-mode denial — never propagate: flags stay correct in memory,
+they just stop surviving reloads.
+
+### `applyQueryFlags(features, options?)`
+
+Applies overrides from the query string, on top of the current state. Returns the
+flags it touched.
+
+```
+?ff=new-navbar                     turn one on
+?ff=-beta-settings                 a leading dash turns one off
+?ff=new-navbar,-beta-settings      comma-separated
+?ff=new-navbar&ff=-beta-settings   or a repeated parameter
+```
+
+- `param` — parameter to read, defaults to `ff`
+- `search` — query string to parse, defaults to `location.search`
+
+A flag forced off is still *registered*, so a debug panel can list it. This is
+the QA lever: a test URL forces a flag without touching the deployment, and the
+link is shareable.
+
 ## Development — playground and build
 
 This repository includes a minimal Vite playground under `playground/` (entry

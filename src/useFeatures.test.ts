@@ -399,6 +399,66 @@ describe('all', () => {
   });
 });
 
+describe('snapshot', () => {
+  test('it reports every registered flag with its state', () => {
+    const { enable, disable, snapshot } = createFeatures();
+
+    enable('on');
+    disable('off');
+
+    expect(snapshot()).toEqual({ on: true, off: false });
+  });
+
+  test('it is empty for an empty registry', () => {
+    expect(createFeatures().snapshot()).toEqual({});
+  });
+
+  test('it round-trips through setFlags', () => {
+    const source = createFeatures();
+    source.enable('on');
+    source.disable('off');
+
+    const target = createFeatures();
+    target.setFlags(source.snapshot());
+
+    expect(target.snapshot()).toEqual(source.snapshot());
+  });
+
+  test('it returns a copy that cannot mutate the registry', () => {
+    const { enable, snapshot, isEnabled } = createFeatures();
+
+    enable('test');
+    const state = snapshot();
+    state.test = false;
+    state.injected = true;
+
+    expect(isEnabled('test')).toBe(true);
+    expect(snapshot()).toEqual({ test: true });
+  });
+
+  test('it drops a flag once unregistered', () => {
+    const { enable, unregister, snapshot } = createFeatures();
+
+    enable('test');
+    expect(snapshot()).toEqual({ test: true });
+
+    unregister('test');
+
+    expect(snapshot()).toEqual({});
+  });
+
+  test('it is tracked by a computed', () => {
+    const { enable, snapshot } = createFeatures();
+    const state = computed(() => snapshot());
+
+    expect(state.value).toEqual({});
+
+    enable('test');
+
+    expect(state.value).toEqual({ test: true });
+  });
+});
+
 describe('reactivity', () => {
   // The whole point of backing the registry with `ref` is that reads inside a
   // reactive effect re-evaluate. A plain `Set` would pass every test above.

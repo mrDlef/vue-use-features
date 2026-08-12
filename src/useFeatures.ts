@@ -29,6 +29,11 @@ export type Features<Flag extends string = string> = {
   /** Forgets every flag. */
   reset: () => void;
   all: () => Flag[];
+  /**
+   * Every registered flag with its state, as a plain serialisable object.
+   * Round-trips through `setFlags`, which is what persistence relies on.
+   */
+  snapshot: () => Record<Flag, boolean>;
 };
 
 /**
@@ -140,6 +145,14 @@ export const createFeatures = <Flag extends string = string>(): Features<Flag> =
     return [...registry.value];
   };
 
+  const snapshot = (): Record<Flag, boolean> => {
+    const state = {} as Record<Flag, boolean>;
+    for (const flag of registry.value) {
+      state[flag] = registryEnabled.value.has(flag);
+    }
+    return state;
+  };
+
   return {
     enable,
     disable,
@@ -150,7 +163,8 @@ export const createFeatures = <Flag extends string = string>(): Features<Flag> =
     setFlags,
     unregister,
     reset,
-    all
+    all,
+    snapshot
   };
 };
 

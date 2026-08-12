@@ -16,7 +16,7 @@ export default defineConfig({
     // through the library. Pairs with `declarationMap` in tsconfig.lib.json.
     sourcemap: true,
     lib: {
-      entry: fileURLToPath(new URL('./src/useFeatures.ts', import.meta.url)),
+      entry: fileURLToPath(new URL('./src/index.ts', import.meta.url)),
       name: 'vueUseFeatures',
       fileName: 'vue-use-features',
     },
