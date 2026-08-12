@@ -57,7 +57,8 @@ the major version is 0, breaking changes ship in minor releases.
   not forced through `vueUseFeatures.default()`.
 - `sideEffects: false` for tree-shaking, and source maps for both the bundle and
   the declarations.
-- A release workflow publishing on tag with npm provenance, and a CI job running
+- A release workflow publishing on tag through npm trusted publishing, so no npm
+  token is stored anywhere and provenance is attested, and a CI job running
   lint, formatting and type checks — none of which ran before.
 
 ### Changed

@@ -12,17 +12,31 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      # Required for npm provenance: the OIDC token is what lets npm attest
-      # that this tarball was built by this workflow from this commit.
+      # Required for trusted publishing: the OIDC token is what authenticates
+      # this workflow to npm, and what lets npm attest provenance. There is no
+      # npm token anywhere — npmjs.com trusts this repo + workflow filename.
       id-token: write
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
+      # Node 24, not 22: trusted publishing needs npm >= 11.5.1 and Node 22
+      # still bundles npm 10.9.x. The check below fails loudly if that ever
+      # regresses, since otherwise it only surfaces at publish time.
       - uses: actions/setup-node@v4
         with:
-          node-version: 22.x
+          node-version: 24.x
           cache: pnpm
           registry-url: https://registry.npmjs.org
+
+      - name: Check npm supports trusted publishing
+        run: |
+          need=11.5.1
+          have="$(npm --version)"
+          echo "npm $have"
+          if [ "$(printf '%s\n%s\n' "$need" "$have" | sort -V | head -1)" != "$need" ]; then
+            echo "npm $have is too old for trusted publishing; need >= $need" >&2
+            exit 1
+          fi
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -51,9 +65,12 @@ jobs:
       - name: Check build output
         run: pnpm run test:dist
 
-      # `npm publish` rather than `pnpm publish`: provenance is an npm CLI
-      # feature and pnpm does not forward the flag.
+      # `npm publish` rather than `pnpm publish`: trusted publishing is an npm
+      # CLI feature. No `--provenance` — it is implied by trusted publishing,
+      # and no credentials, which is the whole point.
+      #
+      # Requires a trusted publisher on npmjs.com for this package, pointing at
+      # mrDlef/vue-use-features and the workflow filename `release.yml`.
+      # Renaming this file breaks publishing until npm is updated to match.
       - name: Publish to npm
-        run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public

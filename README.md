@@ -302,8 +302,18 @@ git push --tags
 
 The workflow refuses to publish when the tag does not match `package.json`, then
 runs lint, formatting, both Vue runtimes, the build and the `dist` guard before
-`npm publish --provenance`. It needs an `NPM_TOKEN` repository secret with
-publish rights; provenance itself comes from the workflow's OIDC token.
+publishing.
+
+There is **no npm token**: the workflow authenticates through
+[trusted publishing](https://docs.npmjs.com/trusted-publishers/), so npm trusts
+this repository and workflow filename over OIDC instead of a stored secret.
+Provenance comes for free with it. The trusted publisher is configured on the
+package's npmjs.com settings page, and it pins the workflow *filename* — so
+renaming `release.yml` breaks publishing until npm is updated to match.
+
+Trusted publishing needs npm ≥ 11.5.1, which is why the job runs Node 24: Node
+22 still bundles npm 10.9.x. A guard step fails the job early if that regresses,
+since otherwise the mismatch only surfaces at `npm publish`.
 
 ## Usage notes
 
