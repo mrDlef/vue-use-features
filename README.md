@@ -15,8 +15,10 @@ It is framework-agnostic within the Vue ecosystem and should work in both Vue 2 
 
 ## Requirements
 
-- Node.js 18+ (Vite 5 requires Node 18 or newer)
-- Package manager: pnpm (repo lockfile), npm or yarn also work
+- Node.js 20.19+ or 22.12+ (required by Vite 7)
+- Package manager: pnpm — the version is pinned by the `packageManager` field
+  in `package.json`, so use `pnpm` rather than npm/yarn to keep the lockfile
+  (`lockfileVersion: 9.0`) readable by CI
 - Peer dependencies:
   - `vue` `^2.0.0 || >=3.0.0`
   - `@vue/composition-api` for Vue 2 (optional in Vue 3)
@@ -118,16 +120,20 @@ pnpm preview
 
 Defined in `package.json`:
 - `dev` — start Vite dev server for the playground
-- `build` — type-check then build the library with Vite
-- `build-only` — build without type-check
+- `build` — type-check, build the library, then emit declarations (sequential:
+  Vite empties `dist/`, so the `.d.ts` pass has to come last)
+- `build-only` — build without type-check or declarations
+- `build:types` — emit `dist/useFeatures.d.ts` via `tsconfig.lib.json`
 - `type-check` — `vue-tsc --build --force`
 - `preview` — preview built playground
-- `test:unit` — run vitest (Vue 3 by default)
+- `test:watch` — run vitest in watch mode (development loop)
+- `test:unit` — run vitest once (Vue 3 by default)
 - `test:unit:vue2` — switch to Vue 2 using `vue-demi` helper, then run tests
 - `test:unit:vue3` — switch back to Vue 3 and run tests
 - `test:ci` — run all unit test variants (default, Vue 2, Vue 3)
-- `lint` — eslint fix
-- `format` — prettier format `src/`
+- `test:dist` — assert on the built package; requires a prior `build`
+- `lint` / `lint:check` — eslint with and without `--fix`
+- `format` / `format:check` — prettier write and check over `src/` and `test/`
 
 ## Tests
 
@@ -145,10 +151,29 @@ pnpm test:unit
 pnpm test:ci
 ```
 
+Component tests (`FeatureFlagsViewer.test.ts`) are skipped under Vue 2, because
+`@vue/test-utils` v2 mounts through Vue 3 only; the composable itself is covered
+in both runtimes.
+
+- Assert on the built package (needs `pnpm build` first):
+
+```bash
+pnpm build && pnpm test:dist
+```
+
+`test:dist` guards what the unit tests structurally cannot: they import `src/`,
+so only an assertion on `dist/` catches `vue-demi` being inlined at build time
+— which would silently turn the published package into a Vue-3-only one.
+
 ### Module entry points
 
 - ESM: `dist/vue-use-features.js` (also available as `module` in `package.json`)
 - UMD/CJS: `dist/vue-use-features.umd.cjs` (`main` in `package.json`), UMD global name: `vueUseFeatures`
+- Types: `dist/useFeatures.d.ts` (`types` in `package.json`, and the first
+  condition of the `.` export so bundler/node16 resolution picks it up)
+
+The UMD build expects `vue-demi` as an external dependency (global `VueDemi`),
+not `vue` directly.
 
 ## Usage notes
 
