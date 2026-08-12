@@ -5,33 +5,34 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "run-p type-check \"build-only {@}\" --",
+    "build": "run-s type-check \"build-only {@}\" build:types --",
     "preview": "vite preview",
     "test:unit": "vitest",
     "test:unit:vue2": "vue-demi-switch 2 vue2 && vitest",
     "test:unit:vue3": "vue-demi-switch 3 && vitest",
     "test:ci": "run-s test:unit test:unit:vue2 test:unit:vue3",
     "build-only": "vite build",
+    "build:types": "vue-tsc -p tsconfig.lib.json",
     "type-check": "vue-tsc --build --force",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix",
     "format": "prettier --write src/"
   },
   "files": [
     "dist",
-    "src",
-    "types"
+    "src"
   ],
   "main": "dist/vue-use-features.umd.cjs",
   "module": "dist/vue-use-features.js",
+  "types": "dist/useFeatures.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/useFeatures.d.ts",
       "import": "./dist/vue-use-features.js",
       "require": "./dist/vue-use-features.umd.cjs"
     },
     "./package.json": "./package.json",
     "./dist/*": "./dist/*",
-    "./src/*": "./src/*",
-    "./types/*": "./types/*"
+    "./src/*": "./src/*"
   },
   "devDependencies": {
     "@rushstack/eslint-patch": "^1.16.1",
