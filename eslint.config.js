@@ -12,7 +12,6 @@ export default [
       'dist/**',
       'node_modules/**',
       '**/*.tsbuildinfo',
-      '.eslintrc.*',
       'eslint.config.js',
     ],
   },

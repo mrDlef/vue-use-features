@@ -8,7 +8,10 @@ export default mergeConfig(
   defineConfig({
     test: {
       environment: 'happy-dom',
-      include: ['src/**/*.{test,spec}.{ts,tsx,js,jsx}'],
+      include: [
+        'src/**/*.{test,spec}.{ts,tsx,js,jsx}',
+        'playground/**/*.{test,spec}.{ts,tsx,js,jsx}',
+      ],
       exclude: [...configDefaults.exclude, 'e2e/*'],
       root: fileURLToPath(new URL('./', import.meta.url)),
     }
