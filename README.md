@@ -249,6 +249,61 @@ A flag forced off is still *registered*, so a debug panel can list it. This is
 the QA lever: a test URL forces a flag without touching the deployment, and the
 link is shareable.
 
+## The `v-feature` directive
+
+For gating markup without wiring a `v-if` to a composable call. Register it once:
+
+```ts
+import { createApp } from 'vue'
+import { vFeature } from '@mr-dlef/vue-use-features'
+
+createApp(App).directive('feature', vFeature)
+```
+
+```vue
+<aside v-feature="'new-navbar'">the new navigation</aside>
+<aside v-feature.not="'new-navbar'">the old one</aside>
+```
+
+The `not` modifier inverts it, which is what makes an A/B pair readable.
+
+### It behaves like `v-show`, not `v-if`
+
+This toggles `display`. A directive **cannot** add or remove an element from the
+tree — only the compiler can, which is why Vue's own `v-show` is a directive and
+`v-if` is not. So the gated content is still rendered and still present in the
+DOM: **do not use it to withhold anything sensitive.** For that, keep `v-if`:
+
+```vue
+<template v-if="isEnabled('admin-panel')">…</template>
+```
+
+The element's own `display` is preserved, so a `display: flex` element goes back
+to `flex` rather than to the browser default when the flag turns on.
+
+The directive holds its own reactive effect per element rather than relying on
+the `updated` hook, because a flag can flip without the surrounding component
+re-rendering — the hook would simply never fire. The effect is released on
+unmount.
+
+Passing something other than a string warns and **hides** the element: a mistake
+in a flag name should not leak unreleased UI.
+
+### Binding it to a specific registry
+
+`vFeature` reads the app-wide registry. For a registry from `createFeatures()`,
+or one scoped with `provideFeatures()`, build your own:
+
+```ts
+import { createFeatureDirective } from '@mr-dlef/vue-use-features'
+
+app.directive('feature', createFeatureDirective(myRegistry))
+```
+
+One object carries both Vue 2 (`bind`/`update`/`unbind`) and Vue 3
+(`mounted`/`updated`/`unmounted`) hook names, so it registers on either without
+a shim.
+
 ## Development — playground and build
 
 This repository includes a minimal Vite playground under `playground/` (entry

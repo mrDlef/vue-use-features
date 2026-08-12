@@ -1,6 +1,6 @@
 import { createApp } from 'vue-demi';
 import FeatureFlagsViewer from './FeatureFlagsViewer.vue';
-import useFeatures, { applyQueryFlags, persistFeatures } from '@/index';
+import useFeatures, { applyQueryFlags, persistFeatures, vFeature } from '@/index';
 
 const features = useFeatures();
 
@@ -22,4 +22,5 @@ if (fromUrl.length > 0) {
 }
 
 const app = createApp(FeatureFlagsViewer);
+app.directive('feature', vFeature);
 app.mount('#app');
