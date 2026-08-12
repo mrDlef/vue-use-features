@@ -4,12 +4,17 @@ A tiny composable to add [feature toggles](https://en.wikipedia.org/wiki/Feature
 
 ## Overview
 
-This library exposes a single composable `useFeatures()` that lets you:
+This library exposes a composable `useFeatures()` that lets you:
 - register flags and enable/disable them at runtime,
 - query whether a flag is enabled,
 - list all registered flags,
 - reset/set a set of flags at once,
 - unregister a flag.
+
+`useFeatures()` resolves to a **shared registry**, so a flag enabled in one
+component is visible from every other one — which is the whole point of a
+feature toggle. Where you need an isolated registry (tests, SSR, a scoped
+subtree), see [Scoping the registry](#scoping-the-registry).
 
 It is framework-agnostic within the Vue ecosystem and should work in both Vue 2 (with `@vue/composition-api`) and Vue 3.
 
@@ -94,6 +99,49 @@ export default {
 - `unregister(flag: string): void` — removes the flag entirely
 - `all(): string[]` — returns the list of all registered flags
 
+The `Features` type describing that object is exported too.
+
+## Scoping the registry
+
+`useFeatures()` returns the registry provided by an ancestor component if there
+is one, and otherwise an app-wide registry held at module level. Two extra
+exports let you control that:
+
+- `createFeatures(): Features` — builds an independent registry, shared with
+  nobody.
+- `provideFeatures(features?: Features): Features` — provides a registry to the
+  current component tree, so every `useFeatures()` below resolves to it. Builds
+  one when called with no argument, and returns whichever it provided. Must be
+  called from `setup()`.
+- `featuresInjectionKey` — the `InjectionKey` behind the two above, if you would
+  rather call `provide()` yourself.
+
+```ts
+// Scope a registry to one subtree, leaving the app-wide one untouched.
+import { provideFeatures } from '@mr-dlef/vue-use-features'
+
+setup() {
+  const features = provideFeatures()
+  features.setFlags(['checkout-v2'])
+}
+```
+
+### SSR
+
+The app-wide registry is a module-level singleton, so in a server process it is
+shared by every request. Under SSR (or Nuxt), create one registry per request
+and provide it from your root component:
+
+```ts
+setup() {
+  provideFeatures(createFeatures())
+}
+```
+
+Flags set through that registry stay scoped to the request. Calling
+`useFeatures()` without a provider on the server would let one request's flags
+be observed by another.
+
 ## Development — playground and build
 
 This repository includes a minimal Vite playground (see `index.html` and `src/index.ts`) that mounts `FeatureFlagsViewer` to try the composable locally.
@@ -173,15 +221,22 @@ so only an assertion on `dist/` catches `vue-demi` being inlined at build time
   condition of the `.` export so bundler/node16 resolution picks it up)
 
 The UMD build expects `vue-demi` as an external dependency (global `VueDemi`),
-not `vue` directly.
+not `vue` directly. `useFeatures` is exported both as the default export and by
+name, so UMD consumers can call `vueUseFeatures.useFeatures()` rather than
+`vueUseFeatures.default()`.
 
 ## Usage notes
 
 - Works with both Vue 2 and Vue 3 via `vue-demi`.
 - For Vue 2, ensure `@vue/composition-api` is installed and registered with `Vue.use`.
-- State is kept within the composable instance; call `useFeatures()` once per scope where you want a shared registry.
-- TODO: Document recommended patterns for app-wide singletons or providing via Vue `provide/inject`.
-- TODO: Document SSR/Nuxt usage if applicable.
+- `useFeatures()` returns a shared registry: repeated calls, in any component,
+  see the same flags. Use `createFeatures()` when you want an isolated one, and
+  `provideFeatures()` to scope one to a subtree — see
+  [Scoping the registry](#scoping-the-registry).
+- `useFeatures()` is safe to call outside a component (a store, a plain module):
+  it skips injection and resolves to the app-wide registry.
+- Reads are reactive. Wrap a call in `computed()` — `computed(() => isEnabled('x'))`
+  — and it re-evaluates when the flag flips.
 
 ## License
 

@@ -1,9 +1,10 @@
 <script lang="ts" setup>
 import useFeatures from '@/useFeatures';
 
+// Reads whichever registry is in scope, and seeds nothing: now that registries
+// are shared, a viewer that registered its own flags on mount would write into
+// the host application's registry.
 const { enable, disable, isEnabled, all } = useFeatures();
-enable('Flag enabled by default');
-disable('Flag disabled by default');
 </script>
 
 <template>

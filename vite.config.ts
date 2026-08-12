@@ -23,6 +23,9 @@ export default defineConfig({
       // and the published output silently becomes Vue-3-only.
       external: ['vue', 'vue-demi', '@vue/composition-api'],
       output: {
+        // The entry has a default export alongside named ones; `named` keeps
+        // both reachable on the UMD global instead of warning about the mix.
+        exports: 'named',
         // Provide global variables to use in the UMD build
         // for externalized deps
         globals: {

@@ -49,12 +49,21 @@ describe('published type declarations', () => {
     expect(types).toContain('export default useFeatures');
   });
 
-  test('the types entry describes the whole public surface', () => {
+  test('the types entry describes the registry surface', () => {
     const types = read(pkg.types);
 
     for (const member of ['enable', 'disable', 'isEnabled', 'setFlags', 'unregister', 'all']) {
       expect(types).toContain(`${member}:`);
     }
+  });
+
+  test('the types entry declares the scoping helpers', () => {
+    const types = read(pkg.types);
+
+    expect(types).toContain('export type Features');
+    expect(types).toContain('export declare const createFeatures');
+    expect(types).toContain('export declare const provideFeatures');
+    expect(types).toContain('export declare const featuresInjectionKey');
   });
 
   test('the root export resolves types before the runtime conditions', () => {
@@ -77,9 +86,16 @@ describe('package entry points', () => {
     }
   });
 
-  test('the CommonJS entry point is loadable', () => {
+  test('the CommonJS entry point exposes the whole public surface', () => {
     const require = createRequire(import.meta.url);
+    const bundle = require(`${root}${pkg.main}`) as Record<string, unknown>;
 
-    expect(typeof require(`${root}${pkg.main}`)).toBe('function');
+    // `useFeatures` is reachable as a named export too, so UMD consumers are
+    // not forced through `vueUseFeatures.default()`.
+    for (const name of ['default', 'useFeatures', 'createFeatures', 'provideFeatures']) {
+      expect(typeof bundle[name], `${name} should be callable`).toBe('function');
+    }
+    expect(typeof bundle.featuresInjectionKey).toBe('symbol');
+    expect(bundle.default).toBe(bundle.useFeatures);
   });
 });
