@@ -5,25 +5,51 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+
 jobs:
-  build:
+  quality:
+    name: Lint, format and types
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # No `version:` — the pnpm version comes from the `packageManager`
+      # field in package.json, so CI cannot drift from the lockfile format.
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Lint
+        run: pnpm run lint:check
+      - name: Check formatting
+        run: pnpm run format:check
+      - name: Type-check
+        run: pnpm run type-check
+
+  test:
+    name: Test on Node ${{ matrix.node-version }}
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         node-version: [20.x, 22.x, 24.x, 25.x]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-      - uses: pnpm/action-setup@v2
-        with:
-          version: 8
-          run_install: false
+          cache: pnpm
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
       - name: Run tests
         run: pnpm run test:ci
       - name: Run build
         run: pnpm run build
+      # Guards the published artifact, not just the sources: the Vue 2 / Vue 3
+      # unit tests import `src/`, so only this catches `vue-demi` being inlined.
+      - name: Check build output
+        run: pnpm run test:dist

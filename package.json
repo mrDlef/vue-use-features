@@ -3,6 +3,7 @@
   "version": "0.2.0",
   "private": false,
   "type": "module",
+  "packageManager": "pnpm@10.21.0",
   "scripts": {
     "dev": "vite",
     "build": "run-s type-check \"build-only {@}\" build:types --",
