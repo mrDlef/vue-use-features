@@ -11,14 +11,15 @@
     "test:unit": "vitest run",
     "test:unit:vue2": "vue-demi-switch 2 vue2 && vitest run",
     "test:unit:vue3": "vue-demi-switch 3 && vitest run",
+    "test:dist": "vitest run --config vitest.dist.config.ts",
     "test:ci": "run-s test:unit test:unit:vue2 test:unit:vue3",
     "build-only": "vite build",
     "build:types": "vue-tsc -p tsconfig.lib.json",
     "type-check": "vue-tsc --build --force",
     "lint": "eslint . --fix",
     "lint:check": "eslint .",
-    "format": "prettier --write src/",
-    "format:check": "prettier --check src/"
+    "format": "prettier --write src/ test/",
+    "format:check": "prettier --check src/ test/"
   },
   "files": [
     "dist",
