@@ -32,7 +32,7 @@ describe.skipIf(isVue2)('FeatureFlagsViewer', () => {
   };
 
   beforeEach(() => {
-    useFeatures().setFlags([]);
+    useFeatures().reset();
   });
 
   test('it lists every registered flag with its state', () => {

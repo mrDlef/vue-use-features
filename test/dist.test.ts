@@ -52,7 +52,20 @@ describe('published type declarations', () => {
   test('the types entry describes the registry surface', () => {
     const types = read(pkg.types);
 
-    for (const member of ['enable', 'disable', 'isEnabled', 'setFlags', 'unregister', 'all']) {
+    const members = [
+      'enable',
+      'disable',
+      'toggle',
+      'isEnabled',
+      'isRegistered',
+      'feature',
+      'setFlags',
+      'unregister',
+      'reset',
+      'all'
+    ];
+
+    for (const member of members) {
       expect(types).toContain(`${member}:`);
     }
   });
@@ -61,9 +74,19 @@ describe('published type declarations', () => {
     const types = read(pkg.types);
 
     expect(types).toContain('export type Features');
+    expect(types).toContain('export type FeatureFlags');
     expect(types).toContain('export declare const createFeatures');
     expect(types).toContain('export declare const provideFeatures');
     expect(types).toContain('export declare const featuresInjectionKey');
+  });
+
+  test('the flag union stays generic in the published declarations', () => {
+    const types = read(pkg.types);
+
+    // Without this, `createFeatures<'a' | 'b'>()` would not type-check for
+    // consumers even though it does in the sources.
+    expect(types).toMatch(/createFeatures: <Flag extends string = string>/);
+    expect(types).toMatch(/useFeatures: <Flag extends string = string>/);
   });
 
   test('the root export resolves types before the runtime conditions', () => {

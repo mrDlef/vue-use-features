@@ -131,6 +131,217 @@ describe('setFlags', () => {
 
     expect(all()).toEqual([]);
   });
+
+  test('it registers every key of a map and enables only the truthy ones', () => {
+    const { setFlags, isEnabled, isRegistered, all } = createFeatures();
+
+    setFlags({ on: true, off: false });
+
+    expect(all()).toEqual(['on', 'off']);
+    expect(isEnabled('on')).toBe(true);
+    expect(isEnabled('off')).toBe(false);
+    // The distinction a plain list cannot express: known, but off.
+    expect(isRegistered('off')).toBe(true);
+  });
+
+  test('it replaces the registry when passed a map', () => {
+    const { enable, setFlags, isRegistered } = createFeatures();
+
+    enable('old');
+    expect(isRegistered('old')).toBe(true);
+
+    setFlags({ new: true });
+
+    expect(isRegistered('old')).toBe(false);
+    expect(isRegistered('new')).toBe(true);
+  });
+
+  test('it clears the registry when passed an empty map', () => {
+    const { enable, setFlags, all } = createFeatures();
+
+    enable('old');
+    expect(all()).toEqual(['old']);
+
+    setFlags({});
+
+    expect(all()).toEqual([]);
+  });
+});
+
+describe('toggle', () => {
+  test('it enables a disabled flag and returns the new state', () => {
+    const { disable, toggle, isEnabled } = createFeatures();
+
+    disable('test');
+    expect(isEnabled('test')).toBe(false);
+
+    expect(toggle('test')).toBe(true);
+    expect(isEnabled('test')).toBe(true);
+  });
+
+  test('it disables an enabled flag and returns the new state', () => {
+    const { enable, toggle, isEnabled } = createFeatures();
+
+    enable('test');
+    expect(isEnabled('test')).toBe(true);
+
+    expect(toggle('test')).toBe(false);
+    expect(isEnabled('test')).toBe(false);
+  });
+
+  test('it registers and enables an unknown flag', () => {
+    const { toggle, isEnabled, all } = createFeatures();
+
+    expect(toggle('test')).toBe(true);
+
+    expect(isEnabled('test')).toBe(true);
+    expect(all()).toEqual(['test']);
+  });
+
+  test('it leaves other flags untouched', () => {
+    const { enable, toggle, isEnabled } = createFeatures();
+
+    enable('kept');
+    toggle('test');
+
+    expect(isEnabled('kept')).toBe(true);
+  });
+
+  test('two toggles return to the initial state', () => {
+    const { enable, toggle, isEnabled } = createFeatures();
+
+    enable('test');
+    toggle('test');
+    toggle('test');
+
+    expect(isEnabled('test')).toBe(true);
+  });
+});
+
+describe('isRegistered', () => {
+  test('it is true for an enabled flag', () => {
+    const { enable, isRegistered } = createFeatures();
+
+    enable('test');
+
+    expect(isRegistered('test')).toBe(true);
+  });
+
+  test('it is true for a registered flag that is disabled', () => {
+    const { disable, isRegistered, isEnabled } = createFeatures();
+
+    disable('test');
+
+    // The whole reason this exists next to isEnabled.
+    expect(isRegistered('test')).toBe(true);
+    expect(isEnabled('test')).toBe(false);
+  });
+
+  test('it is false for an unknown flag', () => {
+    const { enable, isRegistered } = createFeatures();
+
+    enable('known');
+
+    expect(isRegistered('known')).toBe(true);
+    expect(isRegistered('never-seen')).toBe(false);
+  });
+
+  test('it becomes false once the flag is unregistered', () => {
+    const { enable, unregister, isRegistered } = createFeatures();
+
+    enable('test');
+    expect(isRegistered('test')).toBe(true);
+
+    unregister('test');
+
+    expect(isRegistered('test')).toBe(false);
+  });
+});
+
+describe('feature', () => {
+  test('it reads the current state of the flag', () => {
+    const { enable, feature } = createFeatures();
+
+    enable('test');
+
+    expect(feature('test').value).toBe(true);
+  });
+
+  test('it tracks changes made through the registry', () => {
+    const { enable, disable, feature } = createFeatures();
+    const isOn = feature('test');
+
+    expect(isOn.value).toBe(false);
+
+    enable('test');
+    expect(isOn.value).toBe(true);
+
+    disable('test');
+    expect(isOn.value).toBe(false);
+  });
+
+  test('writing true enables and registers the flag', () => {
+    const { feature, isEnabled, all } = createFeatures();
+    const isOn = feature('test');
+
+    isOn.value = true;
+
+    expect(isEnabled('test')).toBe(true);
+    expect(all()).toEqual(['test']);
+  });
+
+  test('writing false disables the flag while keeping it registered', () => {
+    const { enable, feature, isEnabled, isRegistered } = createFeatures();
+    const isOn = feature('test');
+
+    enable('test');
+    isOn.value = false;
+
+    expect(isEnabled('test')).toBe(false);
+    expect(isRegistered('test')).toBe(true);
+  });
+
+  test('two views of the same flag stay in sync', () => {
+    const { feature } = createFeatures();
+    const first = feature('test');
+    const second = feature('test');
+
+    first.value = true;
+
+    expect(second.value).toBe(true);
+  });
+});
+
+describe('reset', () => {
+  test('it forgets every flag', () => {
+    const { enable, disable, reset, all, isEnabled, isRegistered } = createFeatures();
+
+    enable('on');
+    disable('off');
+    expect(all()).toEqual(['on', 'off']);
+
+    reset();
+
+    expect(all()).toEqual([]);
+    expect(isEnabled('on')).toBe(false);
+    expect(isRegistered('off')).toBe(false);
+  });
+});
+
+describe('flag name typing', () => {
+  test('a declared union is enforced at compile time only', () => {
+    const features = createFeatures<'known'>();
+
+    features.enable('known');
+    expect(features.isEnabled('known')).toBe(true);
+
+    // @ts-expect-error 'typo' is not part of the declared flag union
+    features.enable('typo');
+
+    // Narrowing is a compile-time concern -- the registry never inspects names,
+    // so the suppressed call still registers at runtime.
+    expect(features.all()).toEqual(['known', 'typo']);
+  });
 });
 
 describe('unregister', () => {
@@ -222,7 +433,7 @@ describe('registry scoping', () => {
   // `useFeatures()` resolves to the app-wide registry outside a provider, so
   // it has to be cleared between tests.
   beforeEach(() => {
-    useFeatures().setFlags([]);
+    useFeatures().reset();
   });
 
   test('createFeatures returns registries that stay independent', () => {
@@ -280,7 +491,7 @@ describe.skipIf(isVue2)('provideFeatures', () => {
   };
 
   beforeEach(() => {
-    useFeatures().setFlags([]);
+    useFeatures().reset();
   });
 
   test('a provided registry takes precedence over the app-wide one', () => {

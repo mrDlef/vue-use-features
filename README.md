@@ -54,17 +54,15 @@ Vue 3 component example:
 <script setup lang="ts">
 import useFeatures from '@mr-dlef/vue-use-features'
 
-const { enable, disable, isEnabled, all, setFlags, unregister } = useFeatures()
+const { toggle, isEnabled, all, setFlags } = useFeatures()
 
-// initialize some flags
-setFlags(['new-navbar', 'beta-settings'])
-
-enable('new-navbar')
+// initialize some flags — beta-settings starts off
+setFlags({ 'new-navbar': true, 'beta-settings': false })
 </script>
 
 <template>
   <nav v-if="isEnabled('new-navbar')">...</nav>
-  <button @click="disable('new-navbar')">Turn off</button>
+  <button @click="toggle('new-navbar')">Turn off</button>
   <ul>
     <li v-for="flag in all()" :key="flag">{{ flag }}</li>
   </ul>
@@ -92,14 +90,69 @@ export default {
 ## API
 
 `useFeatures()` returns:
-- `enable(flag: string): void` — registers and enables a flag
-- `disable(flag: string): void` — registers (if needed) and disables a flag
-- `isEnabled(flag: string): boolean` — whether the flag is enabled
-- `setFlags(flags: string[]): void` — clears registry and registers/enables all passed flags
-- `unregister(flag: string): void` — removes the flag entirely
+- `enable(flag): void` — registers and enables a flag
+- `disable(flag): void` — registers (if needed) and disables a flag
+- `toggle(flag): boolean` — flips a flag, registering it if unknown, and returns
+  its new state
+- `isEnabled(flag): boolean` — whether the flag is enabled
+- `isRegistered(flag): boolean` — whether the flag is known at all, enabled or
+  not. A disabled flag is still registered, which is what makes it listable
+- `feature(flag): WritableComputedRef<boolean>` — two-way reactive view of one
+  flag, for `v-model` and watchers
+- `setFlags(flags): void` — replaces the registry; see below
+- `unregister(flag): void` — removes the flag entirely
+- `reset(): void` — forgets every flag
 - `all(): string[]` — returns the list of all registered flags
 
-The `Features` type describing that object is exported too.
+The `Features` and `FeatureFlags` types describing that object are exported too.
+
+### Reads are reactive
+
+Every read tracks: wrap one in `computed()` and it re-evaluates when the flag
+flips. `feature()` is the two-way shorthand.
+
+```vue
+<script setup lang="ts">
+import useFeatures from '@mr-dlef/vue-use-features'
+
+const { feature, isEnabled } = useFeatures()
+
+const navbar = feature('new-navbar')   // writable: navbar.value = true
+const isBeta = computed(() => isEnabled('beta-settings'))
+</script>
+
+<template>
+  <input v-model="navbar" type="checkbox" />
+  <aside v-if="isBeta">…</aside>
+</template>
+```
+
+### Declaring initial state
+
+`setFlags` replaces the whole registry and takes either shape:
+
+```ts
+setFlags(['new-navbar', 'beta-settings'])          // both registered and enabled
+setFlags({ 'new-navbar': true, 'beta-settings': false })  // beta starts off
+```
+
+The map form is the only way to declare a flag that is known but off — a plain
+list enables everything it registers.
+
+### Checking flag names at compile time
+
+Pass a union of flag names and typos become type errors:
+
+```ts
+type Flag = 'new-navbar' | 'beta-settings'
+
+const { enable } = useFeatures<Flag>()
+enable('new-navbar')
+enable('new-navbr')   // Argument of type '"new-navbr"' is not assignable…
+```
+
+`createFeatures<Flag>()` takes the same parameter. The narrowing is purely a
+compile-time concern: the registry never inspects flag names.
 
 ## Scoping the registry
 
@@ -235,8 +288,10 @@ name, so UMD consumers can call `vueUseFeatures.useFeatures()` rather than
   [Scoping the registry](#scoping-the-registry).
 - `useFeatures()` is safe to call outside a component (a store, a plain module):
   it skips injection and resolves to the app-wide registry.
-- Reads are reactive. Wrap a call in `computed()` — `computed(() => isEnabled('x'))`
-  — and it re-evaluates when the flag flips.
+- Reads are reactive — see [Reads are reactive](#reads-are-reactive).
+- The registry is held in a `shallowRef` and every mutation replaces the whole
+  `Set`. That is what makes it reactive identically under Vue 2 and Vue 3, and
+  it means `all()` returns a copy you cannot mutate to change state.
 
 ## License
 
