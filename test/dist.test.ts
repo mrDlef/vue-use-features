@@ -5,9 +5,12 @@ import { execFileSync } from 'node:child_process';
 import { beforeAll, describe, expect, test } from 'vitest';
 
 type PackageManifest = {
+  name: string;
+  version: string;
   main: string;
   module: string;
   types: string;
+  sideEffects: boolean;
   exports: Record<string, Record<string, string> | string>;
 };
 
@@ -130,6 +133,16 @@ describe('package entry points', () => {
       expect(subpath.startsWith('./src')).toBe(false);
     }
   });
+
+  test('source maps ship next to every generated file', () => {
+    for (const entry of [pkg.main, pkg.module, pkg.types]) {
+      expect(existsSync(`${root}${entry}.map`), `${entry}.map is missing`).toBe(true);
+    }
+  });
+
+  test('the package declares itself side-effect free', () => {
+    expect(pkg.sideEffects).toBe(false);
+  });
 });
 
 describe('published tarball', () => {
@@ -149,6 +162,7 @@ describe('published tarball', () => {
 
     expect(files).toContain('package.json');
     expect(files).toContain('README.md');
+    expect(files).toContain('CHANGELOG.md');
     expect(files).toContain('LICENSE');
     expect(files).toContain('src/useFeatures.ts');
     for (const entry of [pkg.main, pkg.module, pkg.types]) {
@@ -162,5 +176,11 @@ describe('published tarball', () => {
     expect(files.filter((path) => path.startsWith('playground/'))).toEqual([]);
     expect(files.filter((path) => path.startsWith('test/'))).toEqual([]);
     expect(files.filter((path) => path.includes('.test.'))).toEqual([]);
+  });
+
+  test('the packed version is documented in the changelog', () => {
+    const changelog = read('CHANGELOG.md');
+
+    expect(changelog).toContain(`[${pkg.version}]`);
   });
 });

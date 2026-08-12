@@ -282,6 +282,29 @@ not `vue` directly. `useFeatures` is exported both as the default export and by
 name, so UMD consumers can call `vueUseFeatures.useFeatures()` rather than
 `vueUseFeatures.default()`.
 
+Source maps ship for the bundles and the declarations, and `src/` ships so they
+resolve — but `src/` is not an entry point: there is no `./src/*` export.
+`sideEffects: false` is declared, so bundlers can drop the package entirely when
+nothing imports it.
+
+## Releasing
+
+Publishing is driven by tags, from the `Release` workflow:
+
+```bash
+# 1. bump the version and document it
+#    - package.json "version"
+#    - CHANGELOG.md: turn the "unreleased" heading into the released version
+# 2. commit, then tag
+git tag v0.3.0
+git push --tags
+```
+
+The workflow refuses to publish when the tag does not match `package.json`, then
+runs lint, formatting, both Vue runtimes, the build and the `dist` guard before
+`npm publish --provenance`. It needs an `NPM_TOKEN` repository secret with
+publish rights; provenance itself comes from the workflow's OIDC token.
+
 ## Usage notes
 
 - Works with both Vue 2 and Vue 3 via `vue-demi`.

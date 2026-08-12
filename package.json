@@ -1,8 +1,9 @@
 {
   "name": "@mr-dlef/vue-use-features",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": false,
   "type": "module",
+  "sideEffects": false,
   "packageManager": "pnpm@10.21.0",
   "scripts": {
     "dev": "vite",
@@ -25,7 +26,8 @@
   "files": [
     "dist",
     "src",
-    "!src/**/*.test.ts"
+    "!src/**/*.test.ts",
+    "CHANGELOG.md"
   ],
   "main": "dist/vue-use-features.umd.cjs",
   "module": "dist/vue-use-features.js",
