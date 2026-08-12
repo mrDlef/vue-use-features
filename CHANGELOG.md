@@ -5,7 +5,7 @@ All notable changes to this project are documented here. The format follows
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) — while
 the major version is 0, breaking changes ship in minor releases.
 
-## [0.3.0] — unreleased
+## [0.3.0] — 2026-08-12
 
 ### Breaking
 
