@@ -232,9 +232,12 @@ Defined in `package.json`:
 - `preview` — preview built playground
 - `test:watch` — run vitest in watch mode (development loop)
 - `test:unit` — run vitest once (Vue 3 by default)
-- `test:unit:vue2` — switch to Vue 2 using `vue-demi` helper, then run tests
+- `test:unit:vue2.6` — Vue 2.6 with `@vue/composition-api`, via `vue-demi`'s `2` entry
+- `test:unit:vue2.7` — Vue 2.7 and its built-in composition API, via the `2.7` entry
 - `test:unit:vue3` — switch back to Vue 3 and run tests
-- `test:ci` — run all unit test variants (default, Vue 2, Vue 3)
+- `test:ci` — run every variant (default, Vue 2.6, Vue 2.7, Vue 3)
+- `vue-demi:reset` — switch `vue-demi` back to Vue 3, needed if a Vue 2 run
+  aborted and left it switched (`type-check` then fails against Vue 2 types)
 - `test:dist` — assert on the built package; requires a prior `build`
 - `lint` / `lint:check` — eslint with and without `--fix`
 - `format` / `format:check` — prettier write and check over `src/`, `test/` and
@@ -250,11 +253,18 @@ This project uses [Vitest](https://vitest.dev/) with a `happy-dom` environment b
 pnpm test:unit
 ```
 
-- Run against both Vue 2 and Vue 3 (via `vue-demi-switch`):
+- Run against every supported runtime (via `vue-demi-switch`):
 
 ```bash
 pnpm test:ci
 ```
+
+There are **two distinct Vue 2 paths**, and both are covered because they use
+different reactivity implementations: Vue 2.0–2.6 goes through
+`@vue/composition-api`, while Vue 2.7 has the composition API built in. Testing
+only one hides real breakage — running `@vue/composition-api` on top of Vue 2.7
+is itself an unsupported combination, and it fails in ways neither real path
+does.
 
 Component tests (`FeatureFlagsViewer.test.ts`) are skipped under Vue 2, because
 `@vue/test-utils` v2 mounts through Vue 3 only; the composable itself is covered

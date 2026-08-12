@@ -81,6 +81,9 @@ importers:
       vue2:
         specifier: npm:vue@^2.7.16
         version: vue@2.7.16
+      vue2.6:
+        specifier: npm:vue@~2.6.14
+        version: vue@2.6.14
 
 packages:
 
@@ -1596,6 +1599,10 @@ packages:
     peerDependencies:
       typescript: '>=5.0.0'
 
+  vue@2.6.14:
+    resolution: {integrity: sha512-x2284lgYvjOMj3Za7kqzRcUSxBboHqtgRE2zlos1qWaOye5yUmHn42LB1250NJBLRwEcdrB0JRwyPTEPhfQjiQ==}
+    deprecated: Vue 2 has reached EOL and is no longer actively maintained. See https://v2.vuejs.org/eol/ for more details.
+
   vue@2.7.16:
     resolution: {integrity: sha512-4gCtFXaAA3zYZdTp5s4Hl2sozuySsgz4jy1EnpBHNfpMa9dK1ZCG7viqBPCwXtmgc8nHqUsAu3G4gtmXkkY3Sw==}
     deprecated: Vue 2 has reached EOL and is no longer actively maintained. See https://v2.vuejs.org/eol/ for more details.
@@ -3091,6 +3098,8 @@ snapshots:
       '@volar/typescript': 2.4.28
       '@vue/language-core': 3.3.9
       typescript: 5.9.3
+
+  vue@2.6.14: {}
 
   vue@2.7.16:
     dependencies:
