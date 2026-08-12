@@ -19,12 +19,13 @@
     "type-check": "vue-tsc --build --force",
     "lint": "eslint . --fix",
     "lint:check": "eslint .",
-    "format": "prettier --write src/ test/",
-    "format:check": "prettier --check src/ test/"
+    "format": "prettier --write src/ test/ playground/",
+    "format:check": "prettier --check src/ test/ playground/"
   },
   "files": [
     "dist",
-    "src"
+    "src",
+    "!src/**/*.test.ts"
   ],
   "main": "dist/vue-use-features.umd.cjs",
   "module": "dist/vue-use-features.js",
@@ -36,8 +37,7 @@
       "require": "./dist/vue-use-features.umd.cjs"
     },
     "./package.json": "./package.json",
-    "./dist/*": "./dist/*",
-    "./src/*": "./src/*"
+    "./dist/*": "./dist/*"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

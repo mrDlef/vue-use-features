@@ -197,7 +197,10 @@ be observed by another.
 
 ## Development — playground and build
 
-This repository includes a minimal Vite playground (see `index.html` and `src/index.ts`) that mounts `FeatureFlagsViewer` to try the composable locally.
+This repository includes a minimal Vite playground under `playground/` (entry
+`playground/main.ts`, mounted from the root `index.html`) that renders a
+`FeatureFlagsViewer` to try the composable locally. It is deliberately outside
+`src/`, which holds library code only and is what gets published.
 
 - Start dev playground:
 
@@ -234,7 +237,8 @@ Defined in `package.json`:
 - `test:ci` — run all unit test variants (default, Vue 2, Vue 3)
 - `test:dist` — assert on the built package; requires a prior `build`
 - `lint` / `lint:check` — eslint with and without `--fix`
-- `format` / `format:check` — prettier write and check over `src/` and `test/`
+- `format` / `format:check` — prettier write and check over `src/`, `test/` and
+  `playground/`
 
 ## Tests
 

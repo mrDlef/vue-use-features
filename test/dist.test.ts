@@ -1,19 +1,20 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
+import { execFileSync } from 'node:child_process';
 import { beforeAll, describe, expect, test } from 'vitest';
 
 type PackageManifest = {
   main: string;
   module: string;
   types: string;
-  exports: Record<string, Record<string, string>>;
+  exports: Record<string, Record<string, string> | string>;
 };
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const read = (relativePath: string) => readFileSync(`${root}${relativePath}`, 'utf8');
 const pkg = JSON.parse(read('package.json')) as PackageManifest;
-const rootExport = pkg.exports['.']!;
+const rootExport = pkg.exports['.'] as Record<string, string>;
 
 beforeAll(() => {
   if (!existsSync(`${root}dist`)) {
@@ -120,5 +121,46 @@ describe('package entry points', () => {
     }
     expect(typeof bundle.featuresInjectionKey).toBe('symbol');
     expect(bundle.default).toBe(bundle.useFeatures);
+  });
+
+  test('no export subpath hands out raw sources', () => {
+    // `./src/*` used to expose the playground entry, whose import mounted a Vue
+    // application as a side effect.
+    for (const subpath of Object.keys(pkg.exports)) {
+      expect(subpath.startsWith('./src')).toBe(false);
+    }
+  });
+});
+
+describe('published tarball', () => {
+  // `files` is easy to get subtly wrong, and the cost lands on consumers.
+  const packed = (): string[] => {
+    const output = execFileSync('npm', ['pack', '--dry-run', '--json'], {
+      cwd: root,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore']
+    });
+    const [result] = JSON.parse(output) as [{ files: { path: string }[] }];
+    return result.files.map((file) => file.path);
+  };
+
+  test('it ships the build, the sources behind the maps, and the docs', () => {
+    const files = packed();
+
+    expect(files).toContain('package.json');
+    expect(files).toContain('README.md');
+    expect(files).toContain('LICENSE');
+    expect(files).toContain('src/useFeatures.ts');
+    for (const entry of [pkg.main, pkg.module, pkg.types]) {
+      expect(files).toContain(entry);
+    }
+  });
+
+  test('it ships neither the playground nor the tests', () => {
+    const files = packed();
+
+    expect(files.filter((path) => path.startsWith('playground/'))).toEqual([]);
+    expect(files.filter((path) => path.startsWith('test/'))).toEqual([]);
+    expect(files.filter((path) => path.includes('.test.'))).toEqual([]);
   });
 });

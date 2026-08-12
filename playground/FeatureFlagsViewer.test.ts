@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import { isVue2, nextTick } from 'vue-demi';
 import { mount, type DOMWrapper } from '@vue/test-utils';
-import FeatureFlagsViewer from '@/components/FeatureFlagsViewer.vue';
+import FeatureFlagsViewer from './FeatureFlagsViewer.vue';
 import useFeatures, { createFeatures, featuresInjectionKey } from '@/useFeatures';
 
 const ENABLED = 'flag-enabled';
