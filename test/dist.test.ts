@@ -46,15 +46,30 @@ describe('vue-demi stays external', () => {
 });
 
 describe('published type declarations', () => {
-  test('the types entry exists and declares the composable', () => {
-    const types = read(pkg.types);
+  test('the types entry re-exports every module of the public surface', () => {
+    const entry = read(pkg.types);
+
+    expect(entry).toContain("export { default } from './useFeatures'");
+    expect(entry).toContain("export * from './useFeatures'");
+    expect(entry).toContain("export * from './persistence'");
+    expect(entry).toContain("export * from './queryString'");
+  });
+
+  test('every re-exported declaration file is present', () => {
+    for (const module of ['useFeatures', 'persistence', 'queryString']) {
+      expect(existsSync(`${root}dist/${module}.d.ts`), `${module}.d.ts is missing`).toBe(true);
+    }
+  });
+
+  test('the composable is declared and default-exported', () => {
+    const types = read('dist/useFeatures.d.ts');
 
     expect(types).toContain('declare const useFeatures');
     expect(types).toContain('export default useFeatures');
   });
 
-  test('the types entry describes the registry surface', () => {
-    const types = read(pkg.types);
+  test('the declarations describe the registry surface', () => {
+    const types = read('dist/useFeatures.d.ts');
 
     const members = [
       'enable',
@@ -66,7 +81,8 @@ describe('published type declarations', () => {
       'setFlags',
       'unregister',
       'reset',
-      'all'
+      'all',
+      'snapshot'
     ];
 
     for (const member of members) {
@@ -74,8 +90,8 @@ describe('published type declarations', () => {
     }
   });
 
-  test('the types entry declares the scoping helpers', () => {
-    const types = read(pkg.types);
+  test('the declarations declare the scoping helpers', () => {
+    const types = read('dist/useFeatures.d.ts');
 
     expect(types).toContain('export type Features');
     expect(types).toContain('export type FeatureFlags');
@@ -84,8 +100,15 @@ describe('published type declarations', () => {
     expect(types).toContain('export declare const featuresInjectionKey');
   });
 
+  test('the declarations declare the persistence and query-string helpers', () => {
+    expect(read('dist/persistence.d.ts')).toContain('export declare const persistFeatures');
+    expect(read('dist/persistence.d.ts')).toContain('export type PersistOptions');
+    expect(read('dist/queryString.d.ts')).toContain('export declare const applyQueryFlags');
+    expect(read('dist/queryString.d.ts')).toContain('export type QueryFlagsOptions');
+  });
+
   test('the flag union stays generic in the published declarations', () => {
-    const types = read(pkg.types);
+    const types = read('dist/useFeatures.d.ts');
 
     // Without this, `createFeatures<'a' | 'b'>()` would not type-check for
     // consumers even though it does in the sources.
@@ -119,7 +142,15 @@ describe('package entry points', () => {
 
     // `useFeatures` is reachable as a named export too, so UMD consumers are
     // not forced through `vueUseFeatures.default()`.
-    for (const name of ['default', 'useFeatures', 'createFeatures', 'provideFeatures']) {
+    const callable = [
+      'default',
+      'useFeatures',
+      'createFeatures',
+      'provideFeatures',
+      'persistFeatures',
+      'applyQueryFlags'
+    ];
+    for (const name of callable) {
       expect(typeof bundle[name], `${name} should be callable`).toBe('function');
     }
     expect(typeof bundle.featuresInjectionKey).toBe('symbol');
@@ -164,7 +195,9 @@ describe('published tarball', () => {
     expect(files).toContain('README.md');
     expect(files).toContain('CHANGELOG.md');
     expect(files).toContain('LICENSE');
-    expect(files).toContain('src/useFeatures.ts');
+    for (const module of ['index', 'useFeatures', 'persistence', 'queryString']) {
+      expect(files).toContain(`src/${module}.ts`);
+    }
     for (const entry of [pkg.main, pkg.module, pkg.types]) {
       expect(files).toContain(entry);
     }

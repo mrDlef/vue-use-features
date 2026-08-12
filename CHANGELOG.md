@@ -5,6 +5,30 @@ All notable changes to this project are documented here. The format follows
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) — while
 the major version is 0, breaking changes ship in minor releases.
 
+## [Unreleased]
+
+### Added
+
+- `persistFeatures(features, options?)` restores a registry from storage and
+  writes it back on every change. Defaults to `localStorage`, accepts any
+  `getItem`/`setItem` pair, and is a no-op when there is no storage so it stays
+  safe under SSR. Corrupt or hand-edited payloads are ignored rather than
+  registering nonsense, and storage failures never reach the application.
+- `applyQueryFlags(features, options?)` applies overrides from the query string —
+  `?ff=new-navbar,-beta-settings` — layered on top of the current state rather
+  than replacing it. Returns the flags it touched.
+- `snapshot()` on the registry: every flag with its state, as a plain object that
+  round-trips through `setFlags`.
+- `src/index.ts` is now the published entry, re-exporting the whole surface.
+
+### Fixed
+
+- The Vue 2 test run exercised the wrong `vue-demi` entry: it selected the `2`
+  entry, which routes through `@vue/composition-api`, while the installed Vue 2
+  was 2.7.16 — whose composition API is built in. That combination is not one
+  any real consumer has, and it fails where both real paths work. The matrix now
+  covers Vue 2.6 (with `@vue/composition-api`), Vue 2.7 and Vue 3 separately.
+
 ## [0.3.0] — 2026-08-12
 
 ### Breaking

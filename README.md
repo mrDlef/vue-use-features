@@ -195,6 +195,60 @@ Flags set through that registry stay scoped to the request. Calling
 `useFeatures()` without a provider on the server would let one request's flags
 be observed by another.
 
+## Persistence and overrides
+
+Two helpers take a registry and layer state onto it. Both are plain functions
+rather than options on `createFeatures`, so they tree-shake away when unused and
+never run on a server unless you call them.
+
+```ts
+import useFeatures, { persistFeatures, applyQueryFlags } from '@mr-dlef/vue-use-features'
+
+const features = useFeatures()
+
+features.setFlags({ 'new-navbar': true, 'beta-settings': false })  // defaults
+persistFeatures(features)                                          // then stored state
+applyQueryFlags(features)                                          // then the URL
+```
+
+**Order matters**, and it is the order above: each layer can override the one
+before it. Query-string overrides last means a test URL wins over whatever the
+browser had stored.
+
+### `persistFeatures(features, options?)`
+
+Restores the registry from storage, then writes it back on every change. Returns
+a function that stops persisting.
+
+- `key` — storage key, defaults to `vue-use-features`
+- `storage` — defaults to `localStorage`; pass `sessionStorage`, or anything
+  exposing `getItem`/`setItem`
+
+It is a **no-op when no storage exists**, so calling it under SSR is safe. The
+stored key is user-writable, so a corrupt or hand-edited payload is ignored
+rather than trusted, and only boolean entries are kept. Storage failures — a full
+quota, a private-mode denial — never propagate: flags stay correct in memory,
+they just stop surviving reloads.
+
+### `applyQueryFlags(features, options?)`
+
+Applies overrides from the query string, on top of the current state. Returns the
+flags it touched.
+
+```
+?ff=new-navbar                     turn one on
+?ff=-beta-settings                 a leading dash turns one off
+?ff=new-navbar,-beta-settings      comma-separated
+?ff=new-navbar&ff=-beta-settings   or a repeated parameter
+```
+
+- `param` — parameter to read, defaults to `ff`
+- `search` — query string to parse, defaults to `location.search`
+
+A flag forced off is still *registered*, so a debug panel can list it. This is
+the QA lever: a test URL forces a flag without touching the deployment, and the
+link is shareable.
+
 ## Development — playground and build
 
 This repository includes a minimal Vite playground under `playground/` (entry
@@ -232,9 +286,12 @@ Defined in `package.json`:
 - `preview` — preview built playground
 - `test:watch` — run vitest in watch mode (development loop)
 - `test:unit` — run vitest once (Vue 3 by default)
-- `test:unit:vue2` — switch to Vue 2 using `vue-demi` helper, then run tests
+- `test:unit:vue2.6` — Vue 2.6 with `@vue/composition-api`, via `vue-demi`'s `2` entry
+- `test:unit:vue2.7` — Vue 2.7 and its built-in composition API, via the `2.7` entry
 - `test:unit:vue3` — switch back to Vue 3 and run tests
-- `test:ci` — run all unit test variants (default, Vue 2, Vue 3)
+- `test:ci` — run every variant (default, Vue 2.6, Vue 2.7, Vue 3)
+- `vue-demi:reset` — switch `vue-demi` back to Vue 3, needed if a Vue 2 run
+  aborted and left it switched (`type-check` then fails against Vue 2 types)
 - `test:dist` — assert on the built package; requires a prior `build`
 - `lint` / `lint:check` — eslint with and without `--fix`
 - `format` / `format:check` — prettier write and check over `src/`, `test/` and
@@ -250,11 +307,18 @@ This project uses [Vitest](https://vitest.dev/) with a `happy-dom` environment b
 pnpm test:unit
 ```
 
-- Run against both Vue 2 and Vue 3 (via `vue-demi-switch`):
+- Run against every supported runtime (via `vue-demi-switch`):
 
 ```bash
 pnpm test:ci
 ```
+
+There are **two distinct Vue 2 paths**, and both are covered because they use
+different reactivity implementations: Vue 2.0–2.6 goes through
+`@vue/composition-api`, while Vue 2.7 has the composition API built in. Testing
+only one hides real breakage — running `@vue/composition-api` on top of Vue 2.7
+is itself an unsupported combination, and it fails in ways neither real path
+does.
 
 Component tests (`FeatureFlagsViewer.test.ts`) are skipped under Vue 2, because
 `@vue/test-utils` v2 mounts through Vue 3 only; the composable itself is covered

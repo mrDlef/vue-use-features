@@ -11,10 +11,12 @@
     "preview": "vite preview",
     "test:watch": "vitest",
     "test:unit": "vitest run",
-    "test:unit:vue2": "vue-demi-switch 2 vue2 && vitest run",
+    "test:unit:vue2.6": "vue-demi-switch 2 vue2.6 && vitest run",
+    "test:unit:vue2.7": "vue-demi-switch 2.7 vue2 && vitest run",
     "test:unit:vue3": "vue-demi-switch 3 && vitest run",
     "test:dist": "vitest run --config vitest.dist.config.ts",
-    "test:ci": "run-s test:unit test:unit:vue2 test:unit:vue3",
+    "test:ci": "run-s test:unit test:unit:vue2.6 test:unit:vue2.7 test:unit:vue3",
+    "vue-demi:reset": "vue-demi-switch 3",
     "build-only": "vite build",
     "build:types": "vue-tsc -p tsconfig.lib.json",
     "type-check": "vue-tsc --build --force",
@@ -31,10 +33,10 @@
   ],
   "main": "dist/vue-use-features.umd.cjs",
   "module": "dist/vue-use-features.js",
-  "types": "dist/useFeatures.d.ts",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/useFeatures.d.ts",
+      "types": "./dist/index.d.ts",
       "import": "./dist/vue-use-features.js",
       "require": "./dist/vue-use-features.umd.cjs"
     },
@@ -63,7 +65,8 @@
     "vue": "^3.5.41",
     "vue-eslint-parser": "^10.4.1",
     "vue-tsc": "^3.3.9",
-    "vue2": "npm:vue@^2.7.16"
+    "vue2": "npm:vue@^2.7.16",
+    "vue2.6": "npm:vue@~2.6.14"
   },
   "dependencies": {
     "@tsconfig/node20": "^20.1.9",
