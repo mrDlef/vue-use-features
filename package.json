@@ -92,7 +92,7 @@
     "Vue"
   ],
   "author": "Denis Favreau",
-  "license": "GPL-3.0-or-later",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/mrDlef/vue-use-features/issues"
   },

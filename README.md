@@ -546,7 +546,7 @@ since otherwise the mismatch only surfaces at `npm publish`.
 
 ## License
 
-GPL-3.0-or-later — see [LICENSE](./LICENSE).
+MIT — see [LICENSE](./LICENSE).
 
 ## Acknowledgments
 
