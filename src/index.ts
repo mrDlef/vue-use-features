@@ -4,3 +4,4 @@ export { default } from './useFeatures';
 export * from './useFeatures';
 export * from './persistence';
 export * from './queryString';
+export * from './directive';

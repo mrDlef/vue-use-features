@@ -53,10 +53,11 @@ describe('published type declarations', () => {
     expect(entry).toContain("export * from './useFeatures'");
     expect(entry).toContain("export * from './persistence'");
     expect(entry).toContain("export * from './queryString'");
+    expect(entry).toContain("export * from './directive'");
   });
 
   test('every re-exported declaration file is present', () => {
-    for (const module of ['useFeatures', 'persistence', 'queryString']) {
+    for (const module of ['useFeatures', 'persistence', 'queryString', 'directive']) {
       expect(existsSync(`${root}dist/${module}.d.ts`), `${module}.d.ts is missing`).toBe(true);
     }
   });
@@ -107,6 +108,23 @@ describe('published type declarations', () => {
     expect(read('dist/queryString.d.ts')).toContain('export type QueryFlagsOptions');
   });
 
+  test('the declarations declare the directive', () => {
+    const types = read('dist/directive.d.ts');
+
+    expect(types).toContain('export declare const vFeature');
+    expect(types).toContain('export declare const createFeatureDirective');
+    expect(types).toContain('export type FeatureDirective');
+  });
+
+  test('the directive declares both the Vue 2 and Vue 3 hook names', () => {
+    const types = read('dist/directive.d.ts');
+
+    // One object registers on either major; losing a name silently breaks one.
+    for (const hook of ['mounted', 'updated', 'unmounted', 'bind', 'update', 'unbind']) {
+      expect(types).toContain(`${hook}:`);
+    }
+  });
+
   test('the flag union stays generic in the published declarations', () => {
     const types = read('dist/useFeatures.d.ts');
 
@@ -148,12 +166,14 @@ describe('package entry points', () => {
       'createFeatures',
       'provideFeatures',
       'persistFeatures',
-      'applyQueryFlags'
+      'applyQueryFlags',
+      'createFeatureDirective'
     ];
     for (const name of callable) {
       expect(typeof bundle[name], `${name} should be callable`).toBe('function');
     }
     expect(typeof bundle.featuresInjectionKey).toBe('symbol');
+    expect(typeof bundle.vFeature).toBe('object');
     expect(bundle.default).toBe(bundle.useFeatures);
   });
 
@@ -195,7 +215,7 @@ describe('published tarball', () => {
     expect(files).toContain('README.md');
     expect(files).toContain('CHANGELOG.md');
     expect(files).toContain('LICENSE');
-    for (const module of ['index', 'useFeatures', 'persistence', 'queryString']) {
+    for (const module of ['index', 'useFeatures', 'persistence', 'queryString', 'directive']) {
       expect(files).toContain(`src/${module}.ts`);
     }
     for (const entry of [pkg.main, pkg.module, pkg.types]) {

@@ -19,6 +19,13 @@ the major version is 0, breaking changes ship in minor releases.
   than replacing it. Returns the flags it touched.
 - `snapshot()` on the registry: every flag with its state, as a plain object that
   round-trips through `setFlags`.
+- A `v-feature` directive for gating markup declaratively, with a `not` modifier
+  to invert it. `vFeature` binds to the app-wide registry;
+  `createFeatureDirective(features)` binds to any other. One object carries both
+  the Vue 2 and Vue 3 hook names, so it registers on either. It toggles `display`
+  the way `v-show` does — a directive cannot add or remove an element from the
+  tree — so the content stays in the DOM and it must not be used to withhold
+  anything sensitive.
 - `src/index.ts` is now the published entry, re-exporting the whole surface.
 
 ### Fixed

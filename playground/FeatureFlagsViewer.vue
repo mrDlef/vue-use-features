@@ -26,4 +26,9 @@ const { toggle, isEnabled, all } = useFeatures();
       </tr>
     </tbody>
   </table>
+
+  <!-- Both gated on the same flag through `v-feature`, one inverted. Toggling
+       the flag above flips them without this component re-rendering. -->
+  <p v-feature="'Flag enabled by default'">Shown while the flag is on.</p>
+  <p v-feature.not="'Flag enabled by default'">Shown while the flag is off.</p>
 </template>
