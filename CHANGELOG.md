@@ -5,6 +5,27 @@ All notable changes to this project are documented here. The format follows
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) — while
 the major version is 0, breaking changes ship in minor releases.
 
+## [Unreleased]
+
+### Added
+
+- `loadFeatures(features, load, options?)` fills a registry from a backend. It
+  takes a loader function rather than a URL, so the library does no I/O of its
+  own and the request stays the caller's — client, auth, abort signal and all.
+  Starts loading immediately and returns `isLoading`, `error`, `ready`,
+  `refresh()` and `stop()`.
+- Each load **replaces** the registry, so a flag retired server-side disappears
+  instead of lingering. The `pinned` option carries chosen flags across
+  untouched, which is what makes a query-string override survive a response that
+  lands after it — pass what `applyQueryFlags` returned.
+- The response is treated as external input, like the stored state:
+  non-conforming payloads are a failed load rather than a registry full of
+  nonsense. A failure leaves the registry alone and only fills `error`, so an
+  offline backend degrades to the last known good state.
+- Overlapping loads are safe: only the newest response may write, so a slow
+  request cannot overwrite a later one that already landed.
+- The playground demonstrates the layer behind `?remote`, against a fake backend.
+
 ## [0.4.0] — 2026-08-13
 
 ### Added
