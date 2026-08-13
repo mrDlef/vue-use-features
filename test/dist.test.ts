@@ -53,11 +53,12 @@ describe('published type declarations', () => {
     expect(entry).toContain("export * from './useFeatures'");
     expect(entry).toContain("export * from './persistence'");
     expect(entry).toContain("export * from './queryString'");
+    expect(entry).toContain("export * from './remote'");
     expect(entry).toContain("export * from './directive'");
   });
 
   test('every re-exported declaration file is present', () => {
-    for (const module of ['useFeatures', 'persistence', 'queryString', 'directive']) {
+    for (const module of ['useFeatures', 'persistence', 'queryString', 'remote', 'directive']) {
       expect(existsSync(`${root}dist/${module}.d.ts`), `${module}.d.ts is missing`).toBe(true);
     }
   });
@@ -106,6 +107,15 @@ describe('published type declarations', () => {
     expect(read('dist/persistence.d.ts')).toContain('export type PersistOptions');
     expect(read('dist/queryString.d.ts')).toContain('export declare const applyQueryFlags');
     expect(read('dist/queryString.d.ts')).toContain('export type QueryFlagsOptions');
+  });
+
+  test('the declarations declare the remote loader', () => {
+    const types = read('dist/remote.d.ts');
+
+    expect(types).toContain('export declare const loadFeatures');
+    expect(types).toContain('export type FeatureLoader');
+    expect(types).toContain('export type LoadFeaturesOptions');
+    expect(types).toContain('export type RemoteFeatures');
   });
 
   test('the declarations declare the directive', () => {

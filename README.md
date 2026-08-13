@@ -215,6 +215,9 @@ applyQueryFlags(features)                                          // then the U
 before it. Query-string overrides last means a test URL wins over whatever the
 browser had stored.
 
+A backend is a fourth layer, and an asynchronous one — see
+[Loading flags from a backend](#loading-flags-from-a-backend).
+
 ### `persistFeatures(features, options?)`
 
 Restores the registry from storage, then writes it back on every change. Returns
@@ -248,6 +251,98 @@ flags it touched.
 A flag forced off is still *registered*, so a debug panel can list it. This is
 the QA lever: a test URL forces a flag without touching the deployment, and the
 link is shareable.
+
+## Loading flags from a backend
+
+`loadFeatures(features, load, options?)` fills a registry from wherever your
+flags live. It starts loading immediately and hands back a handle:
+
+```ts
+import useFeatures, {
+  persistFeatures,
+  applyQueryFlags,
+  loadFeatures
+} from '@mr-dlef/vue-use-features'
+
+const features = useFeatures()
+
+features.setFlags({ 'new-navbar': false })   // what holds until flags arrive
+persistFeatures(features)                     // last known state, synchronous
+const pinned = applyQueryFlags(features)      // debug overrides
+
+const { isLoading, error, ready, refresh, stop } = loadFeatures(
+  features,
+  () => fetch('/api/flags').then((r) => r.json()),
+  { pinned }
+)
+```
+
+- `isLoading` — `Ref<boolean>`, true while a load is in flight
+- `error` — `Ref<unknown>`, what the last load threw, cleared by a success
+- `ready` — the first load, as a promise. Await it under SSR, or to hold
+  rendering until the flags are known
+- `refresh()` — loads again. **Never rejects**: failures land in `error`
+- `stop()` — stops applying results; a response already in flight is dropped
+
+### You own the request
+
+There is no `url` option, no headers, no retries: the library does no I/O of its
+own. You pass a function returning a promise, so the request stays yours — your
+client, your auth, your abort signal, your error mapping. The resolved value is a
+`FeatureFlags`, the same shape `setFlags` already takes:
+
+```ts
+loadFeatures(features, () => ['new-navbar', 'beta-settings'])
+loadFeatures(features, () => ({ 'new-navbar': true, 'beta-settings': false }))
+```
+
+The response is treated as **external input**, exactly like the stored state: it
+must be an array or an object, only strings survive from an array and only
+booleans from a map. Anything else is a failed load rather than a registry full
+of nonsense.
+
+### The payload is authoritative, except for `pinned`
+
+Each load **replaces** the registry, so a flag retired server-side actually
+disappears instead of lingering forever. The exception is `pinned`, whose current
+state is carried across untouched — which is what `applyQueryFlags` returning the
+flags it touched is for:
+
+```ts
+const pinned = applyQueryFlags(features)      // ?ff=-new-navbar
+loadFeatures(features, load, { pinned })      // the payload will not undo it
+```
+
+Without it, a deliberate override would be silently reverted the moment the
+request lands, because the synchronous layers run first and the response arrives
+after. Pinning reads the flag's state at load time, not at setup, so a toggle
+made from a debug panel between two loads survives as well.
+
+### What flags are while loading
+
+`isEnabled` stays synchronous and boolean — never a third state — so the pending
+state lives beside the registry, in `isLoading`. Two consequences worth planning
+for:
+
+- **Declare your defaults with `setFlags` before loading.** That is the state
+  that holds until the response lands, and `false` is the safe one: an
+  unreleased feature should not flash into view.
+- **Paired with `persistFeatures`, the payload is stored**, so the next reload
+  starts from the last known flags rather than the defaults. The flags then do
+  not visibly flip once the request completes.
+
+A failed load leaves the registry exactly as it was — the defaults, the stored
+state and the query string all stay in place — and only fills `error`. An
+offline backend degrades to the last known good state instead of turning
+everything off.
+
+### Refreshing
+
+One load at startup, and `refresh()` when you want another. Polling is a
+`setInterval(refresh, 60_000)` away, deliberately left out so the library does
+not inherit tab visibility, backoff and teardown. Overlapping loads are safe:
+only the newest response may write, so a slow request cannot overwrite a later
+one that already landed.
 
 ## The `v-feature` directive
 
