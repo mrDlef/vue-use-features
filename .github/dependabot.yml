@@ -1,0 +1,22 @@
+# Dependabot is here for one reason: the actions in .github/workflows are
+# pinned by commit SHA, and a SHA is unreadable by hand. Dependabot opens the
+# pull request that moves each pin and rewrites the `# vX.Y.Z` comment beside
+# it, which is what keeps the pins from silently rotting.
+#
+# Only `github-actions` is watched. npm dependencies are deliberately left out:
+# this package has a large devDependency surface and no runtime dependency
+# worth chasing weekly, so those are updated by hand.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    # `/` scans .github/workflows, wherever the workflows live.
+    directory: /
+    schedule:
+      interval: monthly
+    # One pull request for all of them rather than three: the actions move
+    # together and each on its own would need its own green CI run.
+    groups:
+      actions:
+        patterns: ['*']
+    commit-message:
+      prefix: ci
